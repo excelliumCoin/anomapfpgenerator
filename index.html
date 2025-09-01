@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,61 +6,41 @@
   <title>Anoma Shrimp PFP Generator</title>
   <style>
     :root{
-      --bg1:#1a0006;   /* deep wine */
-      --bg2:#000000;   /* black */
-      --accent:#ef4444;/* red */
-      --accent-2:#f59e0b; /* amber + icon */
-      --muted:#9ca3af; /* gray text on dark */
-      --panel:#ffffff; /* panels stay white */
-      --ink:#111827;   /* text on white */
-      --radius:16px;
-      --shadow:0 10px 30px rgba(0,0,0,.18);
+      --bg1:#1a0006; --bg2:#000; --panel:#fff; --ink:#111827;
+      --muted:#9ca3af; --accent:#ef4444; --accent-2:#f59e0b;
+      --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.18);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      color:#e5e7eb;
+      margin:0; color:#e5e7eb;
       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
       background:
         radial-gradient(1200px 700px at 10% -10%, #3a000d 0%, transparent 60%),
         radial-gradient(1000px 800px at 120% 120%, #210007 0%, transparent 65%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
     }
-    a{color:#fff}
     .wrap{max-width:1180px;margin:0 auto;padding:22px 16px 42px}
-    header{margin-bottom:10px}
     header h1{margin:0 0 6px;font-size:clamp(22px,3.5vw,32px);color:#fff}
-    header .sub{color:var(--muted);font-size:14px}
+    header .sub{color:var(--muted);font-size:14px;margin-bottom:10px}
 
-    /* Layout */
     .board{display:grid;grid-template-columns:1fr 1.25fr;gap:24px}
     @media (max-width:980px){.board{grid-template-columns:1fr}}
 
-    /* Panels (stay white) */
-    .panel{
-      background:var(--panel);
-      color:var(--ink);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-    }
+    .panel{background:var(--panel);color:var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
     .panel h2{margin:6px 6px 4px;font-size:20px}
     .panel p.hint{margin:0 6px 12px;color:#6b7280;font-size:13px}
 
-    /* Stickers grid (white panel) */
     .stickers-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:8px 6px 6px;min-height:280px}
     .sticker-btn{
       border:1px solid #e5e7eb;background:#fff;border-radius:14px;aspect-ratio:1/1;
       display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;
-      transition:transform .08s ease, box-shadow .2s ease;
-      box-shadow:0 4px 16px rgba(0,0,0,.05);
+      transition:transform .08s ease, box-shadow .2s ease; box-shadow:0 4px 16px rgba(0,0,0,.05);
     }
     .sticker-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,.08)}
     .sticker-btn img{width:100%;height:100%;object-fit:contain;display:block}
 
-    /* Drop area (white) */
-    .drop{position:relative;border:1.5px dashed #d1d5db;border-radius:16px;min-height:440px;
+    .drop{position:relative;border:1.5px dashed #d1d5db;border-radius:16px;min-height:460px;
       display:flex;align-items:center;justify-content:center;background:#fff;overflow:hidden}
     .drop.active{border-color:var(--accent)}
     .empty{text-align:center;color:#6b7280}
@@ -69,41 +48,41 @@
     .empty .small{font-size:12px}
     .file-overlay{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
 
-    /* Buttons (dark/red theme) */
     .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
     .btn{
       appearance:none;border:1px solid #e5e7eb;background:#fff;color:#111827;
       padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;
-      transition:transform .06s ease, box-shadow .2s ease, background .2s ease, color .2s ease
+      transition:transform .06s ease, box-shadow .2s ease
     }
     .btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,.12)}
     .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
     .btn.dark{background:#0b0b0b;border-color:#0b0b0b;color:#fff}
     .btn:disabled{opacity:.45;cursor:not-allowed}
 
-    /* Canvas fills the drop area */
     #pfpCanvas{position:absolute;inset:0;width:100%;height:100%;display:none}
+    /* rotate handle look */
+    .tip{color:#6b7280;font-size:12px}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Anoma Shrimp PFP Generator</h1>
-      <div class="sub">Upload your picture, click a sticker to add, then drag & resize. Export as PNG.</div>
+      <div class="sub">Upload your picture, click a sticker to add, then drag, rotate, flip, and export.</div>
     </header>
 
     <main class="board">
-      <!-- Stickers (WHITE PANEL) -->
+      <!-- Stickers (WHITE) -->
       <section class="panel" aria-labelledby="stickers-title">
         <h2 id="stickers-title">Stickers</h2>
         <p class="hint">Click to add stickers to your PFP</p>
-        <div id="stickersGrid" class="stickers-grid" aria-label="Available stickers"></div>
+        <div id="stickersGrid" class="stickers-grid"></div>
       </section>
 
-      <!-- Your PFP (WHITE PANEL) -->
+      <!-- Your PFP (WHITE) -->
       <section class="panel" aria-labelledby="pfp-title">
         <h2 id="pfp-title">Your PFP</h2>
-        <div id="drop" class="drop" role="region" aria-label="Drop zone">
+        <div id="drop" class="drop" role="region">
           <input id="pfpInput" class="file-overlay" type="file" accept="image/*" />
           <div id="emptyState" class="empty">
             <div style="width:64px;height:64px;border:2px dashed #e5e7eb;border-radius:50%;margin:0 auto 8px;position:relative">
@@ -119,273 +98,295 @@
           <canvas id="pfpCanvas"></canvas>
         </div>
 
-        <div class="controls">
+        <div class="controls" id="editBar">
           <button id="exportPNG" class="btn primary" disabled>Export PNG</button>
           <button id="deleteSelected" class="btn" disabled>Delete selected</button>
           <button id="clearStickers" class="btn" disabled>Clear all stickers</button>
-          <button id="changePhoto" class="btn">Change photo</button>
+          <span style="flex:1"></span>
+          <button id="rotMinus" class="btn">Rotate -15° (R)</button>
+          <button id="rotPlus" class="btn">Rotate +15° (Shift+R)</button>
+          <button id="flipH" class="btn">Flip H (H)</button>
+          <button id="flipV" class="btn">Flip V (V)</button>
+          <button id="resetTx" class="btn">Reset</button>
         </div>
-        <p class="sub" style="color:#6b7280">Tip: Drag a corner handle to resize a sticker. Press <strong>Delete</strong> to remove the selected sticker.</p>
+        <p class="tip">Resize from a corner. Drag the round handle above the box to rotate. Shortcuts: <b>R</b>/<b>Shift+R</b>, <b>H</b>, <b>V</b>, <b>Delete</b>.</p>
       </section>
     </main>
   </div>
 
   <script>
-  /* -------- Sticker URLs (your set) -------- */
+  /* ---------- Stickers ---------- */
   const STICKER_URLS = [
-    'https://i.hizliresim.com/8yuwrjv.png',
-    'https://i.hizliresim.com/ldb30h6.png',
-    'https://i.hizliresim.com/7ntpwkh.png',
-    'https://i.hizliresim.com/7tmhhy9.png',
-    'https://i.hizliresim.com/6x9x45g.png',
-    'https://i.hizliresim.com/1dotx4c.png',
-    'https://i.hizliresim.com/r36ov8h.png',
-    'https://i.hizliresim.com/qpuawvb.png',
-    'https://i.hizliresim.com/caz0mxl.png',
-    'https://i.hizliresim.com/4nuplo8.png',
-    'https://i.hizliresim.com/5930bb6.png',
-    'https://i.hizliresim.com/4t291b5.png',
+    'https://i.hizliresim.com/8yuwrjv.png','https://i.hizliresim.com/ldb30h6.png',
+    'https://i.hizliresim.com/7ntpwkh.png','https://i.hizliresim.com/7tmhhy9.png',
+    'https://i.hizliresim.com/6x9x45g.png','https://i.hizliresim.com/1dotx4c.png',
+    'https://i.hizliresim.com/r36ov8h.png','https://i.hizliresim.com/qpuawvb.png',
+    'https://i.hizliresim.com/caz0mxl.png','https://i.hizliresim.com/4nuplo8.png',
+    'https://i.hizliresim.com/5930bb6.png','https://i.hizliresim.com/4t291b5.png',
     'https://i.hizliresim.com/9m9f7lb.png'
   ];
-
-  /* -------- DOM -------- */
   const grid = document.getElementById('stickersGrid');
-  const drop = document.getElementById('drop');
-  const input = document.getElementById('pfpInput');
-  const empty = document.getElementById('emptyState');
-  const canvas = document.getElementById('pfpCanvas');
-  const ctx = canvas.getContext('2d');
-
-  const exportBtn = document.getElementById('exportPNG');
-  const clearBtn = document.getElementById('clearStickers');
-  const deleteBtn = document.getElementById('deleteSelected');
-  const changeBtn = document.getElementById('changePhoto');
-  const chooseBtn = document.getElementById('chooseBtn');
-  const photoURLBtn = document.getElementById('photoURLBtn');
-
-  /* -------- Canvas setup -------- */
-  const SIZE = 1024;
-  canvas.width = SIZE; canvas.height = SIZE;
-
-  function fitCanvasCSS(){
-    const r = drop.getBoundingClientRect();
-    const s = Math.min(r.width-2, r.height-2);
-    canvas.style.width = s+'px';
-    canvas.style.height = s+'px';
-  }
-  new ResizeObserver(fitCanvasCSS).observe(drop);
-
-  /* -------- State -------- */
-  let baseImg = null; // HTMLImageElement
-  const stickers = []; // {img,x,y,w,h,aspect}
-  let selected = -1, drag = null;
-
-  /* -------- Build sticker grid -------- */
   STICKER_URLS.forEach(url=>{
-    const b = document.createElement('button');
-    b.className = 'sticker-btn';
-    const im = new Image(); im.src = url; im.alt='Sticker'; im.loading='lazy';
-    im.onerror = ()=>{ b.style.opacity='.45'; b.title='failed to load'; };
-    b.appendChild(im);
-    b.addEventListener('click', ()=> addSticker(url));
+    const b=document.createElement('button'); b.className='sticker-btn';
+    const im=new Image(); im.src=url; im.alt='Sticker'; im.loading='lazy';
+    im.onerror=()=>{b.style.opacity='.45';b.title='failed to load'};
+    b.appendChild(im); b.addEventListener('click',()=> addSticker(url));
     grid.appendChild(b);
   });
 
-  function addSticker(src){
-    const img = new Image();
-    img.onload = ()=>{
-      const aspect = img.width / img.height || 1;
-      const w = Math.min(380, SIZE*0.45);
-      const h = Math.round(w/aspect);
-      const st = {img, x:(SIZE-w)/2, y:(SIZE-h)/2, w, h, aspect};
-      stickers.push(st); selected = stickers.length-1;
-      deleteBtn.disabled = false; clearBtn.disabled = false;
-      draw();
-    };
-    img.onerror = ()=> alert('Sticker could not be loaded.');
-    img.src = src; // no crossOrigin to ensure it displays even if CORS is off
-  }
+  /* ---------- DOM ---------- */
+  const drop = document.getElementById('drop');
+  const input = document.getElementById('pfpInput');
+  const empty = document.getElementById('emptyState');
+  const canvas = document.getElementById('pfpCanvas'); const ctx = canvas.getContext('2d');
+  const exportBtn = document.getElementById('exportPNG');
+  const deleteBtn = document.getElementById('deleteSelected');
+  const clearBtn = document.getElementById('clearStickers');
+  const chooseBtn = document.getElementById('chooseBtn');
+  const photoURLBtn = document.getElementById('photoURLBtn');
+  const rotMinus = document.getElementById('rotMinus');
+  const rotPlus  = document.getElementById('rotPlus');
+  const flipHBtn = document.getElementById('flipH');
+  const flipVBtn = document.getElementById('flipV');
+  const resetTx  = document.getElementById('resetTx');
 
-  /* -------- Photo load: File / URL / Paste / DragDrop -------- */
-  function showCanvas(){ empty.style.display='none'; canvas.style.display='block'; exportBtn.disabled=false; }
-  function loadFromFile(file){
-    const reader = new FileReader();
-    reader.onload = ()=> loadFromURL(reader.result);
-    reader.onerror = ()=> alert('Failed to read the file.');
-    reader.readAsDataURL(file);
-  }
+  /* ---------- Canvas ---------- */
+  const SIZE = 1024; canvas.width = SIZE; canvas.height = SIZE;
+  function fitCanvasCSS(){ const r=drop.getBoundingClientRect(); const s=Math.min(r.width-2,r.height-2); canvas.style.width=s+'px'; canvas.style.height=s+'px'; }
+  new ResizeObserver(fitCanvasCSS).observe(drop);
+
+  /* ---------- State ---------- */
+  let baseImg = null;  // photo
+  const stickers = []; // {img,x,y,w,h,angle,flipX,flipY,aspect}
+  let selected = -1, drag = null; // drag: {type:'move'|'scale'|'rotate', ...}
+  const MIN_SIZE = 40;
+
+  /* ---------- Photo load ---------- */
+  function showCanvas(){ empty.style.display='none'; canvas.style.display='block'; exportBtn.disabled=false; input.style.pointerEvents='none'; }
+  function loadFromFile(file){ const r=new FileReader(); r.onload=()=> loadFromURL(r.result); r.onerror=()=>alert('Failed to read the file.'); r.readAsDataURL(file); }
   function loadFromURL(url){
-    const img = new Image();
-    img.onload = ()=>{
-      baseImg = img;
-      showCanvas();
-      input.style.pointerEvents = 'none'; // let canvas get pointer events
-      draw();
-    };
-    img.onerror = ()=> alert('Image failed to load. Make sure it is a direct image URL or a valid image file.');
-    img.src = url;
+    const img=new Image();
+    img.onload=()=>{ baseImg=img; showCanvas(); draw(); };
+    img.onerror=()=>alert('Image failed to load. Use a direct image URL or a valid image file.');
+    img.src=url;
   }
-
   input.addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) loadFromFile(f); });
   chooseBtn.addEventListener('click', ()=> input.click());
-  changeBtn.addEventListener('click', ()=> { input.style.pointerEvents='auto'; input.click(); });
-  photoURLBtn.addEventListener('click', ()=>{ const u = prompt('Enter a direct image URL (.png/.jpg/.jpeg/.webp):'); if(u) loadFromURL(u.trim()); });
-
   drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('active'); });
   drop.addEventListener('dragleave', ()=> drop.classList.remove('active'));
-  drop.addEventListener('drop', e=>{
-    e.preventDefault(); drop.classList.remove('active');
-    const f = [...(e.dataTransfer?.files||[])].find(f=> f.type.startsWith('image/'));
-    if(f) loadFromFile(f);
+  drop.addEventListener('drop', e=>{ e.preventDefault(); drop.classList.remove('active'); const f=[...(e.dataTransfer?.files||[])].find(f=>f.type.startsWith('image/')); if(f) loadFromFile(f); });
+  photoURLBtn.addEventListener('click', ()=>{ const u=prompt('Enter a direct image URL (.png/.jpg/.jpeg/.webp):'); if(u) loadFromURL(u.trim()); });
+  window.addEventListener('paste', e=>{
+    const items=e.clipboardData?.items||[];
+    for(const it of items){ if(it.type.startsWith('image/')){ const b=it.getAsFile(); if(b){ loadFromFile(b); return; } } }
+    const txt=e.clipboardData?.getData('text'); if(txt && /^https?:\/\//.test(txt)) loadFromURL(txt.trim());
   });
 
-  window.addEventListener('paste', (e)=>{
-    const items = e.clipboardData?.items || [];
-    for(const it of items){
-      if(it.type.startsWith('image/')){ const blob = it.getAsFile(); if(blob){ loadFromFile(blob); return; } }
-    }
-    const txt = e.clipboardData?.getData('text');
-    if(txt && /^https?:\/\//.test(txt)) loadFromURL(txt.trim());
-  });
-
-  /* -------- Pointer helpers -------- */
-  const HANDLE = 18;
-  function toCanvasPoint(cx,cy){ const r=canvas.getBoundingClientRect(); const sx=SIZE/r.width, sy=SIZE/r.height; return {x:(cx-r.left)*sx, y:(cy-r.top)*sy}; }
-  function hitSticker(st,p){ return p.x>=st.x && p.x<=st.x+st.w && p.y>=st.y && p.y<=st.y+st.h }
-  function hitHandle(st,p){
-    const pts=[{x:st.x,y:st.y},{x:st.x+st.w,y:st.y},{x:st.x+st.w,y:st.y+st.h},{x:st.x,y:st.y+st.h}];
-    for(let i=0;i<4;i++){const h=pts[i]; if(Math.abs(p.x-h.x)<=HANDLE && Math.abs(p.y-h.y)<=HANDLE) return i;}
-    return -1;
+  /* ---------- Stickers ---------- */
+  function addSticker(src){
+    const img=new Image();
+    img.onload=()=>{
+      const aspect = img.width/img.height || 1;
+      const w = Math.min(380, SIZE*0.45), h = Math.round(w/aspect);
+      stickers.push({img, x:SIZE/2, y:SIZE/2, w, h, angle:0, flipX:false, flipY:false, aspect});
+      selected = stickers.length-1; deleteBtn.disabled=false; clearBtn.disabled=false; draw();
+    };
+    img.onerror=()=>alert('Sticker could not be loaded.');
+    img.src=src;
   }
 
-  canvas.addEventListener('mousedown', onDown);
-  canvas.addEventListener('touchstart', e=> onDown(e.touches[0]));
+  /* ---------- Geometry helpers ---------- */
+  function worldToLocal(st, p){ // undo translate, rotate, flips
+    let x = p.x - st.x, y = p.y - st.y;
+    const a = st.angle, cos=Math.cos(a), sin=Math.sin(a);
+    const lx =  x*cos + y*sin;
+    const ly = -x*sin + y*cos;
+    return { x: st.flipX ? -lx : lx, y: st.flipY ? -ly : ly };
+  }
+  function localToWorld(st, lp){ // for completeness (not used for drawing)
+    const lx = st.flipX ? -lp.x : lp.x, ly = st.flipY ? -lp.y : lp.y;
+    const a=st.angle, cos=Math.cos(a), sin=Math.sin(a);
+    return { x: st.x + (lx*cos - ly*sin), y: st.y + (lx*sin + ly*cos) };
+  }
+  function toCanvasPoint(cx,cy){ const r=canvas.getBoundingClientRect(); const sx=SIZE/r.width, sy=SIZE/r.height; return {x:(cx-r.left)*sx, y:(cy-r.top)*sy}; }
 
-  function onDown(e){
+  function hitLocalRect(st, lp){ return Math.abs(lp.x) <= st.w/2 && Math.abs(lp.y) <= st.h/2; }
+  function nearestHandle(st, lp){
+    const hs = 18;
+    const corners = [
+      {x:-st.w/2,y:-st.h/2, id:'tl'},
+      {x: st.w/2,y:-st.h/2, id:'tr'},
+      {x: st.w/2,y: st.h/2, id:'br'},
+      {x:-st.w/2,y: st.h/2, id:'bl'}
+    ];
+    for(const c of corners){
+      if(Math.abs(lp.x - c.x) <= hs && Math.abs(lp.y - c.y) <= hs) return {type:'scale', corner:c.id};
+    }
+    // rotate handle: above top edge
+    const rx = 0, ry = -st.h/2 - 28, rr = 14;
+    if(Math.hypot(lp.x - rx, lp.y - ry) <= rr) return {type:'rotate'};
+    if(hitLocalRect(st, lp)) return {type:'move'};
+    return null;
+  }
+
+  /* ---------- Pointer interaction ---------- */
+  canvas.addEventListener('mousedown', startPointer);
+  canvas.addEventListener('touchstart', e=> startPointer(e.touches[0]));
+  function startPointer(e){
     if(!baseImg) return;
     const p = toCanvasPoint(e.clientX, e.clientY);
     selected = -1; deleteBtn.disabled=true;
 
+    // topmost hit
     for(let i=stickers.length-1;i>=0;i--){
       const st = stickers[i];
-      const h = hitHandle(st,p);
-      if(h>-1){ selected=i; drag={type:'resize',handle:h,start:{x:st.x,y:st.y,w:st.w,h:st.h}}; break; }
-      if(hitSticker(st,p)){ selected=i; drag={type:'move',dx:p.x-st.x,dy:p.y-st.y}; break; }
-    }
-    if(selected>-1){
-      const st = stickers.splice(selected,1)[0];
-      stickers.push(st); selected=stickers.length-1; deleteBtn.disabled=false;
-    }
-    draw();
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    document.addEventListener('touchmove', onTouchMove, {passive:false});
-    document.addEventListener('touchend', onUp);
-  }
-  function onTouchMove(e){ if(drag){ e.preventDefault(); onMove(e.touches[0]); } }
-  function onMove(e){
-    if(!drag || selected<0) return;
-    const p = toCanvasPoint(e.clientX, e.clientY);
-    const st = stickers[selected];
-    if(drag.type==='move'){
-      st.x = Math.max(0, Math.min(SIZE-st.w, p.x-drag.dx));
-      st.y = Math.max(0, Math.min(SIZE-st.h, p.y-drag.dy));
-    } else {
-      const s = drag.start; let ax,ay;
-      if(drag.handle===0){ax=s.x+s.w; ay=s.y+s.h;}
-      if(drag.handle===1){ax=s.x;     ay=s.y+s.h;}
-      if(drag.handle===2){ax=s.x;     ay=s.y;}
-      if(drag.handle===3){ax=s.x+s.w; ay=s.y;}
-      const ratio = st.aspect || (s.w/s.h);
-      let nw = Math.abs(ax-p.x), nh = nw/ratio;
-      if(Math.abs(ax-p.x) < Math.abs(ay-p.y)){ nh = Math.abs(ay-p.y); nw = nh*ratio; }
-      nw = Math.max(40, Math.min(SIZE, nw));
-      nh = Math.max(40/ratio, Math.min(SIZE, nh));
-      const nx = Math.min(ax, ax-nw), ny = Math.min(ay, ay-nh);
-      st.x = Math.max(0, Math.min(SIZE-nw, nx));
-      st.y = Math.max(0, Math.min(SIZE-nh, ny));
-      st.w = Math.min(SIZE-st.x, nw);
-      st.h = Math.min(SIZE-st.y, nh);
-    }
-    draw();
-  }
-  function onUp(){
-    drag=null;
-    document.removeEventListener('mousemove', onMove);
-    document.removeEventListener('mouseup', onUp);
-    document.removeEventListener('touchmove', onTouchMove);
-    document.removeEventListener('touchend', onUp);
-  }
-
-  /* -------- Delete/Clear -------- */
-  deleteBtn.addEventListener('click', ()=>{
-    if(selected<0) return;
-    stickers.splice(selected,1);
-    selected=-1; deleteBtn.disabled=true;
-    clearBtn.disabled = stickers.length===0;
-    draw();
-  });
-  clearBtn.addEventListener('click', ()=>{
-    stickers.length=0; selected=-1;
-    deleteBtn.disabled=true; clearBtn.disabled=true;
-    draw();
-  });
-  window.addEventListener('keydown', e=>{
-    if(e.key==='Delete' && stickers.length){
-      stickers.pop(); selected=-1;
-      deleteBtn.disabled = stickers.length===0;
-      clearBtn.disabled = stickers.length===0;
-      draw();
-    }
-  });
-
-  /* -------- Draw / Export -------- */
-  function draw(){
-    ctx.clearRect(0,0,SIZE,SIZE);
-    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,SIZE,SIZE);
-
-    if(baseImg){
-      const iw = baseImg.naturalWidth || baseImg.width;
-      const ih = baseImg.naturalHeight || baseImg.height;
-      if(iw>0 && ih>0){
-        const sc = Math.max(SIZE/iw, SIZE/ih);
-        const sw = SIZE/sc, sh = SIZE/sc;
-        const sx = (iw - sw)/2, sy = (ih - sh)/2;
-        try{ ctx.drawImage(baseImg, sx, sy, sw, sh, 0,0,SIZE,SIZE); }
-        catch{ ctx.drawImage(baseImg, 0,0,SIZE,SIZE); }
+      const lp = worldToLocal(st, p);
+      const hit = nearestHandle(st, lp);
+      if(hit){
+        selected = i;
+        // bring to front
+        const s=stickers.splice(selected,1)[0]; stickers.push(s); selected=stickers.length-1;
+        if(hit.type==='move') drag = {type:'move', dx:p.x - s.x, dy:p.y - s.y};
+        if(hit.type==='rotate'){
+          drag = {type:'rotate', startAngle:s.angle, base: Math.atan2(p.y - s.y, p.x - s.x)};
+        }
+        if(hit.type==='scale'){
+          drag = {type:'scale', corner:hit.corner, startW:s.w, startH:s.h};
+        }
+        deleteBtn.disabled=false;
+        break;
       }
     }
-    stickers.forEach(st=> ctx.drawImage(st.img, st.x, st.y, st.w, st.h));
+    draw();
+    document.addEventListener('mousemove', movePointer);
+    document.addEventListener('mouseup', endPointer);
+    document.addEventListener('touchmove', touchMove, {passive:false});
+    document.addEventListener('touchend', endPointer);
+  }
+  function touchMove(e){ if(drag){ e.preventDefault(); movePointer(e.touches[0]); } }
+  function movePointer(e){
+    if(selected<0 || !drag) return;
+    const st = stickers[selected];
+    const p = toCanvasPoint(e.clientX, e.clientY);
 
+    if(drag.type==='move'){
+      st.x = p.x - drag.dx; st.y = p.y - drag.dy;
+    } else if(drag.type==='rotate'){
+      const ang = Math.atan2(p.y - st.y, p.x - st.x);
+      st.angle = drag.startAngle + (ang - drag.base);
+    } else if(drag.type==='scale'){
+      // keep center; compute new size from local pointer
+      const lp = worldToLocal(st, p);
+      const ax = Math.abs(lp.x), ay = Math.abs(lp.y);
+      // choose dominant axis but preserve aspect
+      let newW = Math.max(MIN_SIZE, 2 * ax);
+      let newH = newW / st.aspect;
+      if(ay > (ax / st.aspect)){ // height dominates
+        newH = Math.max(MIN_SIZE / st.aspect, 2 * ay);
+        newW = newH * st.aspect;
+      }
+      st.w = Math.min(SIZE, newW);
+      st.h = Math.min(SIZE, newH);
+    }
+    draw();
+  }
+  function endPointer(){
+    drag=null;
+    document.removeEventListener('mousemove', movePointer);
+    document.removeEventListener('mouseup', endPointer);
+    document.removeEventListener('touchmove', touchMove);
+    document.removeEventListener('touchend', endPointer);
+  }
+
+  /* ---------- Buttons & shortcuts ---------- */
+  function rotateSel(delta){ if(selected<0) return; stickers[selected].angle += delta; draw(); }
+  function flipSel(axis){ if(selected<0) return; if(axis==='x') stickers[selected].flipX = !stickers[selected].flipX; else stickers[selected].flipY = !stickers[selected].flipY; draw(); }
+  function resetSel(){ if(selected<0) return; const st=stickers[selected]; st.angle=0; st.flipX=st.flipY=false; draw(); }
+
+  rotMinus.addEventListener('click', ()=> rotateSel(-Math.PI/12)); // -15°
+  rotPlus .addEventListener('click', ()=> rotateSel(+Math.PI/12)); // +15°
+  flipHBtn.addEventListener('click', ()=> flipSel('x'));
+  flipVBtn.addEventListener('click', ()=> flipSel('y'));
+  resetTx .addEventListener('click', resetSel);
+
+  window.addEventListener('keydown', e=>{
+    if(e.key==='Delete' && selected>-1){ stickers.splice(selected,1); selected=-1; draw(); return; }
+    if(e.key.toLowerCase()==='h'){ flipSel('x'); }
+    if(e.key.toLowerCase()==='v'){ flipSel('y'); }
+    if(e.key.toLowerCase()==='r'){ rotateSel(e.shiftKey ? +Math.PI/12 : -Math.PI/12); }
+  });
+
+  deleteBtn.addEventListener('click', ()=>{
+    if(selected<0) return; stickers.splice(selected,1); selected=-1;
+    deleteBtn.disabled = stickers.length===0; clearBtn.disabled = stickers.length===0; draw();
+  });
+  clearBtn.addEventListener('click', ()=>{ stickers.length=0; selected=-1; deleteBtn.disabled=true; clearBtn.disabled=true; draw(); });
+
+  /* ---------- Draw ---------- */
+  function draw(){
+    ctx.clearRect(0,0,SIZE,SIZE);
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,SIZE,SIZE);
+
+    // base image: CONTAIN & CENTER (no crop)
+    if(baseImg){
+      const iw=baseImg.naturalWidth||baseImg.width, ih=baseImg.naturalHeight||baseImg.height;
+      if(iw>0 && ih>0){
+        const scale = Math.min(SIZE/iw, SIZE/ih); // contain
+        const dw = Math.round(iw*scale), dh = Math.round(ih*scale);
+        const dx = Math.round((SIZE - dw)/2), dy = Math.round((SIZE - dh)/2);
+        try{ ctx.drawImage(baseImg, 0,0, iw,ih, dx,dy, dw,dh); }
+        catch{ ctx.drawImage(baseImg, dx,dy, dw,dh); }
+      }
+    }
+
+    // stickers
+    stickers.forEach((st, idx)=>{
+      ctx.save();
+      ctx.translate(st.x, st.y);
+      ctx.rotate(st.angle);
+      ctx.scale(st.flipX? -1:1, st.flipY? -1:1);
+      ctx.drawImage(st.img, -st.w/2, -st.h/2, st.w, st.h);
+      ctx.restore();
+    });
+
+    // selection overlay (rotated rect + handles)
     if(selected>-1){
       const st = stickers[selected];
       ctx.save();
-      ctx.strokeStyle = '#111';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6,4]);
-      ctx.strokeRect(st.x, st.y, st.w, st.h);
+      ctx.translate(st.x, st.y);
+      ctx.rotate(st.angle);
+      ctx.scale(st.flipX? -1:1, st.flipY? -1:1);
+
+      ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+      ctx.strokeRect(-st.w/2, -st.h/2, st.w, st.h);
       ctx.setLineDash([]);
-      ctx.fillStyle = '#111';
-      const hs = 18;
-      ctx.fillRect(st.x-hs/2, st.y-hs/2, hs, hs);
-      ctx.fillRect(st.x+st.w-hs/2, st.y-hs/2, hs, hs);
-      ctx.fillRect(st.x+st.w-hs/2, st.y+st.h-hs/2, hs, hs);
-      ctx.fillRect(st.x-hs/2, st.y+st.h-hs/2, hs, hs);
+
+      ctx.fillStyle='#111';
+      const hs=18, rH=14;
+      // corners
+      ctx.fillRect(-st.w/2-hs/2, -st.h/2-hs/2, hs, hs);
+      ctx.fillRect( st.w/2-hs/2, -st.h/2-hs/2, hs, hs);
+      ctx.fillRect( st.w/2-hs/2,  st.h/2-hs/2, hs, hs);
+      ctx.fillRect(-st.w/2-hs/2,  st.h/2-hs/2, hs, hs);
+      // rotate handle (circle)
+      ctx.beginPath(); ctx.arc(0, -st.h/2-28, rH, 0, Math.PI*2); ctx.fill();
       ctx.restore();
     }
   }
 
-  exportBtn.addEventListener('click', ()=>{
+  /* ---------- Export ---------- */
+  document.getElementById('exportPNG').addEventListener('click', ()=>{
     if(!baseImg){ alert('Upload a picture first.'); return; }
     try{
       const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a'); a.href=url; a.download='anoma-shrimp-pfp.png';
+      const a = document.createElement('a'); a.href = url; a.download = 'anoma-shrimp-pfp.png';
       document.body.appendChild(a); a.click(); a.remove();
     }catch{
       alert('Export blocked due to cross-origin stickers. Editor still works; rehost stickers with CORS or load them as local files to export.');
     }
   });
 
+  // initial size
   fitCanvasCSS();
   </script>
 </body>
