@@ -5,28 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Anoma Shrimp PFP Generator</title>
 <style>
-  :root{ --bg1:#1a0006; --bg2:#000; --panel:#fff; --ink:#111827;
+  :root{
+    --bg1:#1a0006; --bg2:#000; --panel:#fff; --ink:#111827;
     --muted:#9ca3af; --accent:#ef4444; --accent-2:#f59e0b;
-    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.18); }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
-    background:radial-gradient(1200px 700px at 10% -10%, #3a000d 0%, transparent 60%),
-               radial-gradient(1000px 800px at 120% 120%, #210007 0%, transparent 65%),
-               linear-gradient(180deg,var(--bg1),var(--bg2));}
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:#e5e7eb;
+    font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    background:
+      radial-gradient(1200px 700px at 10% -10%, #3a000d 0%, transparent 60%),
+      radial-gradient(1000px 800px at 120% 120%, #210007 0%, transparent 65%),
+      linear-gradient(180deg, var(--bg1), var(--bg2));
+  }
   .wrap{max-width:1180px;margin:0 auto;padding:22px 16px 42px}
   header h1{margin:0 0 6px;font-size:clamp(22px,3.5vw,32px);color:#fff}
   header .sub{color:var(--muted);font-size:14px;margin-bottom:10px}
+
   .board{display:grid;grid-template-columns:1fr 1.25fr;gap:24px}
   @media (max-width:980px){.board{grid-template-columns:1fr}}
-  .panel{background:#fff;color:var(--ink);border-radius:16px;box-shadow:var(--shadow);padding:18px}
+
+  /* Panels stay white */
+  .panel{background:var(--panel);color:var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
   .panel h2{margin:6px 6px 4px;font-size:20px}
   .panel p.hint{margin:0 6px 12px;color:#6b7280;font-size:13px}
+
+  /* Sticker grid */
   .stickers-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:8px 6px 6px;min-height:280px}
-  .sticker-btn{border:1px solid #e5e7eb;background:#fff;border-radius:14px;aspect-ratio:1;
+  .sticker-btn{
+    border:1px solid #e5e7eb;background:#fff;border-radius:14px;aspect-ratio:1/1;
     display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;
-    transition:transform .08s ease,box-shadow .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.05)}
+    transition:transform .08s ease, box-shadow .2s ease; box-shadow:0 4px 16px rgba(0,0,0,.05);
+  }
   .sticker-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,.08)}
   .sticker-btn img{width:100%;height:100%;object-fit:contain;display:block}
+  .fallback-tile{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fee2e2;color:#991b1b;font-weight:800}
+
+  /* Drop/Canvas (white) */
   .drop{position:relative;border:1.5px dashed #d1d5db;border-radius:16px;min-height:480px;
     display:flex;align-items:center;justify-content:center;background:#fff;overflow:hidden}
   .drop.active{border-color:var(--accent)}
@@ -34,67 +51,72 @@
   .empty .big{font-size:20px;color:#111827;margin:6px 0 2px}
   .empty .small{font-size:12px}
   .file-overlay{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
+
   .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-  .btn{appearance:none;border:1px solid #e5e7eb;background:#fff;color:#111827;
+  .btn{
+    appearance:none;border:1px solid #e5e7eb;background:#fff;color:#111827;
     padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;font-size:14px;
-    transition:transform .06s ease,box-shadow .2s ease}
+    transition:transform .06s ease, box-shadow .2s ease
+  }
   .btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,.12)}
   .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
   .btn.dark{background:#0b0b0b;border-color:#0b0b0b;color:#fff}
   .btn:disabled{opacity:.45;cursor:not-allowed}
+
   #pfpCanvas{position:absolute;inset:0;width:100%;height:100%;display:none}
   .tip{color:#6b7280;font-size:12px}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Anoma Shrimp PFP Generator</h1>
-    <div class="sub">Upload your picture, add/drag/rotate/flip stickers, then export as PNG.</div>
-  </header>
+  <div class="wrap">
+    <header>
+      <h1>Anoma Shrimp PFP Generator</h1>
+      <div class="sub">Upload your picture, then add/drag/rotate/flip stickers. Export as PNG.</div>
+    </header>
 
-  <main class="board">
-    <section class="panel">
-      <h2>Stickers</h2>
-      <p class="hint">Click to add stickers to your PFP</p>
-      <div id="stickersGrid" class="stickers-grid"></div>
-    </section>
+    <main class="board">
+      <!-- Stickers (WHITE) -->
+      <section class="panel" aria-labelledby="stickers-title">
+        <h2 id="stickers-title">Stickers</h2>
+        <p class="hint">Click to add stickers to your PFP</p>
+        <div id="stickersGrid" class="stickers-grid"></div>
+      </section>
 
-    <section class="panel">
-      <h2>Your PFP</h2>
-      <div id="drop" class="drop">
-        <input id="pfpInput" class="file-overlay" type="file" accept="image/*"/>
-        <div id="emptyState" class="empty">
-          <div style="width:64px;height:64px;border:2px dashed #e5e7eb;border-radius:50%;margin:0 auto 8px;position:relative">
-            <span style="position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:#f59e0b;display:flex;align-items:center;justify-content:center;color:#111;font-weight:800">+</span>
+      <!-- Your PFP (WHITE) -->
+      <section class="panel" aria-labelledby="pfp-title">
+        <h2 id="pfp-title">Your PFP</h2>
+        <div id="drop" class="drop" role="region" aria-label="Drop zone">
+          <input id="pfpInput" class="file-overlay" type="file" accept="image/*" />
+          <div id="emptyState" class="empty">
+            <div style="width:64px;height:64px;border:2px dashed #e5e7eb;border-radius:50%;margin:0 auto 8px;position:relative">
+              <span style="position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:var(--accent-2);display:flex;align-items:center;justify-content:center;color:#111;font-weight:800">+</span>
+            </div>
+            <div class="big">Drop your picture here</div>
+            <div class="small">or tap/click to browse</div>
+            <div class="controls" style="justify-content:center;margin-top:10px">
+              <button id="chooseBtn" class="btn dark">Choose photo</button>
+              <button id="photoURLBtn" class="btn">Import by URL</button>
+            </div>
           </div>
-          <div class="big">Drop your picture here</div>
-          <div class="small">or tap/click to browse</div>
-          <div class="controls" style="justify-content:center;margin-top:10px">
-            <button id="chooseBtn" class="btn dark">Choose photo</button>
-            <button id="photoURLBtn" class="btn">Import by URL</button>
-          </div>
+          <canvas id="pfpCanvas"></canvas>
         </div>
-        <canvas id="pfpCanvas"></canvas>
-      </div>
 
-      <div class="controls">
-        <button id="exportPNG" class="btn primary" disabled>Export PNG</button>
-        <button id="deleteSelected" class="btn" disabled>Delete selected</button>
-        <button id="clearStickers" class="btn" disabled>Clear all stickers</button>
-        <span style="flex:1"></span>
-        <button id="changePhoto" class="btn" style="display:none">Change photo</button>
-        <button id="deletePhoto" class="btn" style="display:none">Delete photo</button>
-      </div>
-      <p class="tip">Rotate via the round handle above the selected sticker. Shortcuts: <b>H</b>/<b>V</b> flip, <b>R</b>/<b>Shift+R</b> rotate, <b>Delete</b> remove.</p>
-    </section>
-  </main>
-</div>
+        <div class="controls">
+          <button id="exportPNG" class="btn primary" disabled>Export PNG</button>
+          <button id="deleteSelected" class="btn" disabled>Delete selected</button>
+          <button id="clearStickers" class="btn" disabled>Clear all stickers</button>
+          <span style="flex:1"></span>
+          <button id="changePhoto" class="btn" style="display:none">Change photo</button>
+          <button id="deletePhoto" class="btn" style="display:none">Delete photo</button>
+        </div>
+        <p class="tip">Rotate using the round handle above the selected sticker. Shortcuts: <b>H</b>/<b>V</b> to flip, <b>R</b>/<b>Shift+R</b> to rotate, <b>Delete</b> to remove.</p>
+      </section>
+    </main>
+  </div>
 
 <script>
-/* --- CONFIG --- */
-const USE_PROXY = true; // Çözüm B için true, Çözüm A (yerel sticker) için false yap
-const STICKER_URLS_RAW = [
+/* ---------- Sticker URLs ---------- */
+const STICKER_URLS = [
   'https://i.hizliresim.com/8yuwrjv.png','https://i.hizliresim.com/ldb30h6.png',
   'https://i.hizliresim.com/7ntpwkh.png','https://i.hizliresim.com/7tmhhy9.png',
   'https://i.hizliresim.com/6x9x45g.png','https://i.hizliresim.com/1dotx4c.png',
@@ -103,16 +125,15 @@ const STICKER_URLS_RAW = [
   'https://i.hizliresim.com/5930bb6.png','https://i.hizliresim.com/4t291b5.png',
   'https://i.hizliresim.com/9m9f7lb.png'
 ];
-const corsify = (u) => USE_PROXY ? `/api/cors?u=${encodeURIComponent(u)}` : u;
-const STICKER_URLS = STICKER_URLS_RAW.map(corsify);
 
-/* --- DOM refs --- */
+/* ---------- DOM ---------- */
 const grid = document.getElementById('stickersGrid');
 const drop = document.getElementById('drop');
 const input = document.getElementById('pfpInput');
 const empty = document.getElementById('emptyState');
 const canvas = document.getElementById('pfpCanvas');
 const ctx = canvas.getContext('2d');
+
 const exportBtn = document.getElementById('exportPNG');
 const clearBtn = document.getElementById('clearStickers');
 const deleteBtn = document.getElementById('deleteSelected');
@@ -121,102 +142,145 @@ const deletePhotoBtn = document.getElementById('deletePhoto');
 const chooseBtn = document.getElementById('chooseBtn');
 const photoURLBtn = document.getElementById('photoURLBtn');
 
-/* --- Canvas --- */
-const SIZE=1024; canvas.width=SIZE; canvas.height=SIZE;
-new ResizeObserver(()=>{const r=drop.getBoundingClientRect();const s=Math.min(r.width-2,r.height-2);canvas.style.width=s+'px';canvas.style.height=s+'px';}).observe(drop);
+/* ---------- Canvas ---------- */
+const SIZE = 1024; canvas.width = SIZE; canvas.height = SIZE;
+function fitCanvasCSS(){ const r=drop.getBoundingClientRect(); const s=Math.min(r.width-2,r.height-2); canvas.style.width=s+'px'; canvas.style.height=s+'px'; }
+new ResizeObserver(fitCanvasCSS).observe(drop);
 
-/* --- State --- */
-let baseImg=null; const stickers=[]; let selected=-1, drag=null;
-const MIN_SIZE=40;
+/* ---------- State ---------- */
+let baseImg = null;                    // uploaded photo (Image)
+const stickers = [];                   // {img,x,y,w,h,angle,flipX,flipY,aspect}
+let selected = -1, drag = null;        // drag state
+const MIN_SIZE = 40;
 
-/* --- Build sticker grid --- */
+/* ---------- Build sticker grid (with graceful fallback) ---------- */
 STICKER_URLS.forEach(url=>{
   const b=document.createElement('button'); b.className='sticker-btn';
-  const im=new Image(); im.crossOrigin='anonymous'; im.referrerPolicy='no-referrer';
-  im.src=url; im.alt='Sticker'; im.loading='lazy';
-  im.onerror=()=>{ b.textContent='!'; b.style.background='#fee2e2'; b.style.color='#991b1b'; b.style.fontWeight='800'; };
-  b.appendChild(im); b.addEventListener('click',()=> addSticker(url));
+  const im=new Image(); im.loading='lazy'; im.referrerPolicy='no-referrer'; im.src=url; im.alt='Sticker';
+  im.onerror=()=>{ const f=document.createElement('div'); f.className='fallback-tile'; f.textContent='!'; b.innerHTML=''; b.appendChild(f); };
+  b.appendChild(im);
+  b.addEventListener('click',()=> addSticker(url));
   grid.appendChild(b);
 });
 
-/* --- Photo load --- */
+/* ---------- Photo load & UI ---------- */
 function showCanvasUI(show){
-  empty.style.display=show?'none':'block'; canvas.style.display=show?'block':'none';
-  exportBtn.disabled=!show; changeBtn.style.display=show?'inline-block':'none';
-  deletePhotoBtn.style.display=show?'inline-block':'none'; input.style.pointerEvents=show?'none':'auto';
+  empty.style.display = show ? 'none' : 'block';
+  canvas.style.display = show ? 'block' : 'none';
+  exportBtn.disabled = !show;
+  changeBtn.style.display = show ? 'inline-block' : 'none';
+  deletePhotoBtn.style.display = show ? 'inline-block' : 'none';
+  input.style.pointerEvents = show ? 'none' : 'auto';
 }
-function loadFromFile(file){ const r=new FileReader(); r.onload=()=>loadFromURL(r.result); r.onerror=()=>alert('Failed to read file.'); r.readAsDataURL(file); }
+function loadFromFile(file){
+  const r=new FileReader();
+  r.onload = ()=> loadFromURL(r.result);
+  r.onerror = ()=> alert('Failed to read the file.');
+  r.readAsDataURL(file);
+}
 function loadFromURL(url){
   const img=new Image();
-  img.onload=()=>{ baseImg=img; showCanvasUI(true); draw(); };
-  img.onerror=()=>alert('Image failed to load.');
-  img.src=url;
+  img.onload = ()=>{ baseImg=img; showCanvasUI(true); draw(); };
+  img.onerror = ()=> alert('Image failed to load. Use a direct image URL or a valid image file.');
+  img.src = url;
 }
 input.addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) loadFromFile(f); });
 chooseBtn.addEventListener('click', ()=> input.click());
 changeBtn.addEventListener('click', ()=> { input.style.pointerEvents='auto'; input.click(); });
 deletePhotoBtn.addEventListener('click', ()=> { baseImg=null; showCanvasUI(false); draw(); });
 photoURLBtn.addEventListener('click', ()=>{ const u=prompt('Enter a direct image URL (.png/.jpg/.jpeg/.webp):'); if(u) loadFromURL(u.trim()); });
+
 drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('active'); });
 drop.addEventListener('dragleave', ()=> drop.classList.remove('active'));
-drop.addEventListener('drop', e=>{ e.preventDefault(); drop.classList.remove('active'); const f=[...(e.dataTransfer?.files||[])].find(f=>f.type.startsWith('image/')); if(f) loadFromFile(f); });
+drop.addEventListener('drop', e=>{
+  e.preventDefault(); drop.classList.remove('active');
+  const f=[...(e.dataTransfer?.files||[])].find(f=> f.type.startsWith('image/'));
+  if(f) loadFromFile(f);
+});
 window.addEventListener('paste', e=>{
-  const items=e.clipboardData?.items||[]; for(const it of items){ if(it.type.startsWith('image/')){ const b=it.getAsFile(); if(b){ loadFromFile(b); return; } } }
+  const items=e.clipboardData?.items||[];
+  for(const it of items){ if(it.type.startsWith('image/')){ const b=it.getAsFile(); if(b){ loadFromFile(b); return; } } }
   const txt=e.clipboardData?.getData('text'); if(txt && /^https?:\/\//.test(txt)) loadFromURL(txt.trim());
 });
 
-/* --- Stickers --- */
+/* ---------- Stickers ---------- */
 function addSticker(src){
-  const img=new Image(); img.crossOrigin='anonymous'; img.referrerPolicy='no-referrer';
-  img.onload=()=>{ const aspect=img.width/img.height||1; const w=Math.min(380,SIZE*0.45), h=Math.round(w/aspect);
-    stickers.push({img,x:SIZE/2,y:SIZE/2,w,h,angle:0,flipX:false,flipY:false,aspect});
-    selected=stickers.length-1; deleteBtn.disabled=false; clearBtn.disabled=false; draw(); };
-  img.onerror=()=>alert('Sticker could not be loaded (proxy down?)');
-  img.src=src;
+  const img=new Image();
+  img.onload=()=>{
+    const aspect = img.width/img.height || 1;
+    const w = Math.min(380, SIZE*0.45), h = Math.round(w/aspect);
+    stickers.push({img, x:SIZE/2, y:SIZE/2, w, h, angle:0, flipX:false, flipY:false, aspect});
+    selected = stickers.length-1; deleteBtn.disabled=false; clearBtn.disabled=false; draw();
+  };
+  img.onerror=()=> alert('Sticker could not be loaded.');
+  img.referrerPolicy='no-referrer';
+  img.src=src;                  // show even if CORS is off (exportta kısıt olabilir)
 }
 
-/* --- Geometry helpers --- */
-function toCanvasPoint(cx,cy){ const r=canvas.getBoundingClientRect(); const sx=SIZE/r.width, sy=SIZE/r.height; return {x:(cx-r.left)*sx,y:(cy-r.top)*sy}; }
-function worldToLocal(st,p){ let x=p.x-st.x,y=p.y-st.y; const a=st.angle,c=Math.cos(a),s=Math.sin(a); const lx=x*c+y*s, ly=-x*s+y*c; return {x:st.flipX?-lx:lx, y:st.flipY?-ly:ly}; }
-function hitLocalRect(st,lp){ return Math.abs(lp.x)<=st.w/2 && Math.abs(lp.y)<=st.h/2; }
-function nearestHandle(st,lp){ const hs=18, corners=[{x:-st.w/2,y:-st.h/2,id:'tl'},{x:st.w/2,y:-st.h/2,id:'tr'},{x:st.w/2,y:st.h/2,id:'br'},{x:-st.w/2,y:st.h/2,id:'bl'}];
+/* ---------- Geometry & hit testing ---------- */
+function toCanvasPoint(cx,cy){ const r=canvas.getBoundingClientRect(); const sx=SIZE/r.width, sy=SIZE/r.height; return {x:(cx-r.left)*sx, y:(cy-r.top)*sy}; }
+function worldToLocal(st, p){ let x=p.x-st.x, y=p.y-st.y; const a=st.angle, c=Math.cos(a), s=Math.sin(a); const lx=x*c + y*s, ly=-x*s + y*c; return {x: st.flipX? -lx: lx, y: st.flipY? -ly: ly}; }
+function hitLocalRect(st, lp){ return Math.abs(lp.x) <= st.w/2 && Math.abs(lp.y) <= st.h/2; }
+function nearestHandle(st, lp){
+  const hs=18;
+  const corners=[{x:-st.w/2,y:-st.h/2,id:'tl'},{x:st.w/2,y:-st.h/2,id:'tr'},{x:st.w/2,y:st.h/2,id:'br'},{x:-st.w/2,y:st.h/2,id:'bl'}];
   for(const c of corners){ if(Math.abs(lp.x-c.x)<=hs && Math.abs(lp.y-c.y)<=hs) return {type:'scale',corner:c.id}; }
-  const rx=0,ry=-st.h/2-28,rr=14; if(Math.hypot(lp.x-rx,lp.y-ry)<=rr) return {type:'rotate'};
+  const rx=0, ry=-st.h/2-28, rr=14; if(Math.hypot(lp.x-rx, lp.y-ry)<=rr) return {type:'rotate'};
   if(hitLocalRect(st,lp)) return {type:'move'}; return null;
 }
 
-/* --- Pointer interaction --- */
+/* ---------- Pointer interaction ---------- */
 canvas.addEventListener('mousedown', startPointer);
 canvas.addEventListener('touchstart', e=> startPointer(e.touches[0]));
 function startPointer(e){
   if(!baseImg) return;
-  const p=toCanvasPoint(e.clientX,e.clientY); selected=-1; deleteBtn.disabled=true;
-  for(let i=stickers.length-1;i>=0;i--){ const st=stickers[i], lp=worldToLocal(st,p), hit=nearestHandle(st,lp);
-    if(hit){ const s=stickers.splice(i,1)[0]; stickers.push(s); selected=stickers.length-1;
+  const p = toCanvasPoint(e.clientX, e.clientY);
+  selected = -1; deleteBtn.disabled=true;
+  for(let i=stickers.length-1;i>=0;i--){
+    const st = stickers[i];
+    const lp = worldToLocal(st, p);
+    const hit = nearestHandle(st, lp);
+    if(hit){
+      const s=stickers.splice(i,1)[0]; stickers.push(s); selected=stickers.length-1;
       if(hit.type==='move')   drag={type:'move',dx:p.x-s.x,dy:p.y-s.y};
       if(hit.type==='rotate') drag={type:'rotate',start:s.angle,base:Math.atan2(p.y-s.y,p.x-s.x)};
-      if(hit.type==='scale')  drag={type:'scale',corner:hit.corner,startW:s.w,startH:s.h}; deleteBtn.disabled=false; break; } }
+      if(hit.type==='scale')  drag={type:'scale',corner:hit.corner,startW:s.w,startH:s.h};
+      deleteBtn.disabled=false; break;
+    }
+  }
   draw();
-  document.addEventListener('mousemove', movePointer); document.addEventListener('mouseup', endPointer);
-  document.addEventListener('touchmove', touchMove,{passive:false}); document.addEventListener('touchend', endPointer);
+  document.addEventListener('mousemove', movePointer);
+  document.addEventListener('mouseup', endPointer);
+  document.addEventListener('touchmove', touchMove, {passive:false});
+  document.addEventListener('touchend', endPointer);
 }
 function touchMove(e){ if(drag){ e.preventDefault(); movePointer(e.touches[0]); } }
 function movePointer(e){
-  if(selected<0||!drag) return; const st=stickers[selected], p=toCanvasPoint(e.clientX,e.clientY);
+  if(selected<0 || !drag) return;
+  const st = stickers[selected], p = toCanvasPoint(e.clientX, e.clientY);
   if(drag.type==='move'){ st.x=p.x-drag.dx; st.y=p.y-drag.dy; }
   else if(drag.type==='rotate'){ const a=Math.atan2(p.y-st.y,p.x-st.x); st.angle=drag.start+(a-drag.base); }
-  else if(drag.type==='scale'){ const lp=worldToLocal(st,p), ax=Math.abs(lp.x), ay=Math.abs(lp.y);
-    let nw=Math.max(MIN_SIZE,2*ax), nh=nw/st.aspect; if(ay>ax/st.aspect){ nh=Math.max(MIN_SIZE/st.aspect,2*ay); nw=nh*st.aspect; }
-    st.w=Math.min(SIZE,nw); st.h=Math.min(SIZE,nh); }
+  else if(drag.type==='scale'){
+    const lp=worldToLocal(st,p); const ax=Math.abs(lp.x), ay=Math.abs(lp.y);
+    let newW=Math.max(MIN_SIZE, 2*ax), newH=newW/st.aspect;
+    if(ay > ax/st.aspect){ newH=Math.max(MIN_SIZE/st.aspect, 2*ay); newW=newH*st.aspect; }
+    st.w=Math.min(SIZE,newW); st.h=Math.min(SIZE,newH);
+  }
   draw();
 }
-function endPointer(){ drag=null; document.removeEventListener('mousemove',movePointer);
-  document.removeEventListener('mouseup',endPointer); document.removeEventListener('touchmove',touchMove); document.removeEventListener('touchend',endPointer); }
+function endPointer(){
+  drag=null;
+  document.removeEventListener('mousemove', movePointer);
+  document.removeEventListener('mouseup', endPointer);
+  document.removeEventListener('touchmove', touchMove);
+  document.removeEventListener('touchend', endPointer);
+}
 
-/* --- Shortcuts --- */
+/* ---------- Shortcuts & sticker actions ---------- */
 window.addEventListener('keydown', e=>{
   if(e.key==='Delete' && selected>-1){ stickers.splice(selected,1); selected=-1; draw(); return; }
-  if(selected>-1){ const st=stickers[selected];
+  if(selected>-1){
+    const st=stickers[selected];
     if(e.key.toLowerCase()==='h'){ st.flipX=!st.flipX; draw(); }
     if(e.key.toLowerCase()==='v'){ st.flipY=!st.flipY; draw(); }
     if(e.key.toLowerCase()==='r'){ st.angle += (e.shiftKey? +Math.PI/12 : -Math.PI/12); draw(); }
@@ -225,32 +289,61 @@ window.addEventListener('keydown', e=>{
 deleteBtn.addEventListener('click', ()=>{ if(selected<0) return; stickers.splice(selected,1); selected=-1; draw(); });
 clearBtn.addEventListener('click', ()=>{ stickers.length=0; selected=-1; draw(); });
 
-/* --- Draw (photo contain+center) --- */
+/* ---------- Draw (photo contained+centered) ---------- */
 function draw(){
-  ctx.clearRect(0,0,SIZE,SIZE); ctx.fillStyle='#fff'; ctx.fillRect(0,0,SIZE,SIZE);
-  if(baseImg){ const iw=baseImg.naturalWidth||baseImg.width, ih=baseImg.naturalHeight||baseImg.height;
-    if(iw>0&&ih>0){ const s=Math.min(SIZE/iw,SIZE/ih); const dw=Math.round(iw*s), dh=Math.round(ih*s);
-      const dx=Math.round((SIZE-dw)/2), dy=Math.round((SIZE-dh)/2);
-      try{ ctx.drawImage(baseImg,0,0,iw,ih,dx,dy,dw,dh); } catch{ ctx.drawImage(baseImg,dx,dy,dw,dh); } } }
-  stickers.forEach(st=>{ ctx.save(); ctx.translate(st.x,st.y); ctx.rotate(st.angle); ctx.scale(st.flipX?-1:1, st.flipY?-1:1);
-    ctx.drawImage(st.img,-st.w/2,-st.h/2,st.w,st.h); ctx.restore(); });
-  if(selected>-1){ const st=stickers[selected]; ctx.save(); ctx.translate(st.x,st.y); ctx.rotate(st.angle); ctx.scale(st.flipX?-1:1,st.flipY?-1:1);
-    ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.strokeRect(-st.w/2,-st.h/2,st.w,st.h); ctx.setLineDash([]);
-    ctx.fillStyle='#111'; const hs=18; ctx.fillRect(-st.w/2-hs/2,-st.h/2-hs/2,hs,hs); ctx.fillRect(st.w/2-hs/2,-st.h/2-hs/2,hs,hs);
-    ctx.fillRect(st.w/2-hs/2,st.h/2-hs/2,hs,hs); ctx.fillRect(-st.w/2-hs/2,st.h/2-hs/2,hs,hs);
-    ctx.beginPath(); ctx.arc(0,-st.h/2-28,14,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+  ctx.clearRect(0,0,SIZE,SIZE);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,SIZE,SIZE);
+
+  if(baseImg){
+    const iw=baseImg.naturalWidth||baseImg.width, ih=baseImg.naturalHeight||baseImg.height;
+    if(iw>0 && ih>0){
+      const scale = Math.min(SIZE/iw, SIZE/ih);      // CONTAIN
+      const dw = Math.round(iw*scale), dh = Math.round(ih*scale);
+      const dx = Math.round((SIZE - dw)/2), dy = Math.round((SIZE - dh)/2); // CENTER
+      try{ ctx.drawImage(baseImg, 0,0, iw,ih, dx,dy, dw,dh); }
+      catch{ ctx.drawImage(baseImg, dx,dy, dw,dh); }
+    }
+  }
+
+  stickers.forEach(st=>{
+    ctx.save();
+    ctx.translate(st.x, st.y);
+    ctx.rotate(st.angle);
+    ctx.scale(st.flipX? -1:1, st.flipY? -1:1);
+    ctx.drawImage(st.img, -st.w/2, -st.h/2, st.w, st.h);
+    ctx.restore();
+  });
+
+  if(selected>-1){
+    const st=stickers[selected];
+    ctx.save();
+    ctx.translate(st.x, st.y); ctx.rotate(st.angle); ctx.scale(st.flipX? -1:1, st.flipY? -1:1);
+    ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(-st.w/2,-st.h/2,st.w,st.h); ctx.setLineDash([]);
+    ctx.fillStyle='#111'; const hs=18;
+    ctx.fillRect(-st.w/2-hs/2,-st.h/2-hs/2,hs,hs);
+    ctx.fillRect(st.w/2-hs/2,-st.h/2-hs/2,hs,hs);
+    ctx.fillRect(st.w/2-hs/2, st.h/2-hs/2,hs,hs);
+    ctx.fillRect(-st.w/2-hs/2, st.h/2-hs/2,hs,hs);
+    ctx.beginPath(); ctx.arc(0, -st.h/2-28, 14, 0, Math.PI*2); ctx.fill(); // rotate handle
+    ctx.restore();
+  }
 }
 
-/* --- Export --- */
+/* ---------- Export ---------- */
 document.getElementById('exportPNG').addEventListener('click', ()=>{
   if(!baseImg){ alert('Upload a picture first.'); return; }
-  const url = canvas.toDataURL('image/png');
-  const a=document.createElement('a'); a.href=url; a.download='anoma-shrimp-pfp.png';
-  document.body.appendChild(a); a.click(); a.remove();
+  try{
+    const url = canvas.toDataURL('image/png');
+    const a=document.createElement('a'); a.href=url; a.download='anoma-shrimp-pfp.png';
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch{
+    alert('Export blocked due to cross-origin stickers. Rehost with CORS or load stickers as local files to export.');
+  }
 });
 
-/* init */
-(() => { const r=drop.getBoundingClientRect(); const s=Math.min(r.width-2,r.height-2); canvas.style.width=s+'px'; canvas.style.height=s+'px'; })();
+/* initial layout */
+fitCanvasCSS();
 </script>
 </body>
 </html>
