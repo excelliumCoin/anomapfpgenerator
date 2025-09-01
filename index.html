@@ -60,7 +60,6 @@
     .btn:disabled{opacity:.45;cursor:not-allowed}
 
     #pfpCanvas{position:absolute;inset:0;width:100%;height:100%;display:none}
-    /* rotate handle look */
     .tip{color:#6b7280;font-size:12px}
   </style>
 </head>
@@ -68,7 +67,7 @@
   <div class="wrap">
     <header>
       <h1>Anoma Shrimp PFP Generator</h1>
-      <div class="sub">Upload your picture, click a sticker to add, then drag, rotate, flip, and export.</div>
+      <div class="sub">Upload your picture, click a sticker to add, then drag, rotate (handle), flip (H/V), and export.</div>
     </header>
 
     <main class="board">
@@ -91,25 +90,22 @@
             <div class="big">Drop your picture here</div>
             <div class="small">or tap/click to browse</div>
             <div class="controls" style="justify-content:center;margin-top:10px">
-              <button id="chooseBtn" class="btn dark">Choose Photo</button>
+              <button id="chooseBtn" class="btn dark">Choose photo</button>
               <button id="photoURLBtn" class="btn">Import by URL</button>
             </div>
           </div>
           <canvas id="pfpCanvas"></canvas>
         </div>
 
-        <div class="controls" id="editBar">
+        <div class="controls">
           <button id="exportPNG" class="btn primary" disabled>Export PNG</button>
           <button id="deleteSelected" class="btn" disabled>Delete selected</button>
           <button id="clearStickers" class="btn" disabled>Clear all stickers</button>
           <span style="flex:1"></span>
-          <button id="rotMinus" class="btn">Rotate -15° (R)</button>
-          <button id="rotPlus" class="btn">Rotate +15° (Shift+R)</button>
-          <button id="flipH" class="btn">Flip H (H)</button>
-          <button id="flipV" class="btn">Flip V (V)</button>
-          <button id="resetTx" class="btn">Reset</button>
+          <button id="changePhoto" class="btn" style="display:none">Change photo</button>
+          <button id="deletePhoto" class="btn" style="display:none">Delete photo</button>
         </div>
-        <p class="tip">Resize from a corner. Drag the round handle above the box to rotate. Shortcuts: <b>R</b>/<b>Shift+R</b>, <b>H</b>, <b>V</b>, <b>Delete</b>.</p>
+        <p class="tip">Rotate using the small round handle above the selected sticker. Shortcuts: <b>R</b>/<b>Shift+R</b>, <b>H</b>, <b>V</b>, <b>Delete</b>.</p>
       </section>
     </main>
   </div>
@@ -139,16 +135,14 @@
   const input = document.getElementById('pfpInput');
   const empty = document.getElementById('emptyState');
   const canvas = document.getElementById('pfpCanvas'); const ctx = canvas.getContext('2d');
+
   const exportBtn = document.getElementById('exportPNG');
-  const deleteBtn = document.getElementById('deleteSelected');
   const clearBtn = document.getElementById('clearStickers');
+  const deleteBtn = document.getElementById('deleteSelected');
+  const changeBtn = document.getElementById('changePhoto');
+  const deletePhotoBtn = document.getElementById('deletePhoto');
   const chooseBtn = document.getElementById('chooseBtn');
   const photoURLBtn = document.getElementById('photoURLBtn');
-  const rotMinus = document.getElementById('rotMinus');
-  const rotPlus  = document.getElementById('rotPlus');
-  const flipHBtn = document.getElementById('flipH');
-  const flipVBtn = document.getElementById('flipV');
-  const resetTx  = document.getElementById('resetTx');
 
   /* ---------- Canvas ---------- */
   const SIZE = 1024; canvas.width = SIZE; canvas.height = SIZE;
@@ -156,26 +150,37 @@
   new ResizeObserver(fitCanvasCSS).observe(drop);
 
   /* ---------- State ---------- */
-  let baseImg = null;  // photo
+  let baseImg = null;  // user photo (HTMLImageElement)
   const stickers = []; // {img,x,y,w,h,angle,flipX,flipY,aspect}
   let selected = -1, drag = null; // drag: {type:'move'|'scale'|'rotate', ...}
   const MIN_SIZE = 40;
 
-  /* ---------- Photo load ---------- */
-  function showCanvas(){ empty.style.display='none'; canvas.style.display='block'; exportBtn.disabled=false; input.style.pointerEvents='none'; }
+  /* ---------- Helpers ---------- */
+  function showCanvasUI(show){
+    empty.style.display = show ? 'none' : 'block';
+    canvas.style.display = show ? 'block' : 'none';
+    exportBtn.disabled = !show;
+    changeBtn.style.display = show ? 'inline-block' : 'none';
+    deletePhotoBtn.style.display = show ? 'inline-block' : 'none';
+    input.style.pointerEvents = show ? 'none' : 'auto';
+  }
+
+  /* ---------- Photo load (contain + center) ---------- */
   function loadFromFile(file){ const r=new FileReader(); r.onload=()=> loadFromURL(r.result); r.onerror=()=>alert('Failed to read the file.'); r.readAsDataURL(file); }
   function loadFromURL(url){
     const img=new Image();
-    img.onload=()=>{ baseImg=img; showCanvas(); draw(); };
+    img.onload=()=>{ baseImg=img; showCanvasUI(true); draw(); };
     img.onerror=()=>alert('Image failed to load. Use a direct image URL or a valid image file.');
     img.src=url;
   }
   input.addEventListener('change', e=>{ const f=e.target.files?.[0]; if(f) loadFromFile(f); });
+  changeBtn.addEventListener('click', ()=> { input.style.pointerEvents='auto'; input.click(); });
+  deletePhotoBtn.addEventListener('click', ()=> { baseImg=null; showCanvasUI(false); draw(); });
   chooseBtn.addEventListener('click', ()=> input.click());
+  photoURLBtn.addEventListener('click', ()=>{ const u=prompt('Enter a direct image URL (.png/.jpg/.jpeg/.webp):'); if(u) loadFromURL(u.trim()); });
   drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('active'); });
   drop.addEventListener('dragleave', ()=> drop.classList.remove('active'));
   drop.addEventListener('drop', e=>{ e.preventDefault(); drop.classList.remove('active'); const f=[...(e.dataTransfer?.files||[])].find(f=>f.type.startsWith('image/')); if(f) loadFromFile(f); });
-  photoURLBtn.addEventListener('click', ()=>{ const u=prompt('Enter a direct image URL (.png/.jpg/.jpeg/.webp):'); if(u) loadFromURL(u.trim()); });
   window.addEventListener('paste', e=>{
     const items=e.clipboardData?.items||[];
     for(const it of items){ if(it.type.startsWith('image/')){ const b=it.getAsFile(); if(b){ loadFromFile(b); return; } } }
@@ -195,152 +200,91 @@
     img.src=src;
   }
 
-  /* ---------- Geometry helpers ---------- */
-  function worldToLocal(st, p){ // undo translate, rotate, flips
-    let x = p.x - st.x, y = p.y - st.y;
-    const a = st.angle, cos=Math.cos(a), sin=Math.sin(a);
-    const lx =  x*cos + y*sin;
-    const ly = -x*sin + y*cos;
-    return { x: st.flipX ? -lx : lx, y: st.flipY ? -ly : ly };
-  }
-  function localToWorld(st, lp){ // for completeness (not used for drawing)
-    const lx = st.flipX ? -lp.x : lp.x, ly = st.flipY ? -lp.y : lp.y;
-    const a=st.angle, cos=Math.cos(a), sin=Math.sin(a);
-    return { x: st.x + (lx*cos - ly*sin), y: st.y + (lx*sin + ly*cos) };
-  }
+  /* ---------- Geometry & hit-testing ---------- */
   function toCanvasPoint(cx,cy){ const r=canvas.getBoundingClientRect(); const sx=SIZE/r.width, sy=SIZE/r.height; return {x:(cx-r.left)*sx, y:(cy-r.top)*sy}; }
-
+  function worldToLocal(st, p){ let x=p.x-st.x, y=p.y-st.y; const a=st.angle, c=Math.cos(a), s=Math.sin(a); const lx=x*c + y*s, ly=-x*s + y*c; return {x: st.flipX? -lx: lx, y: st.flipY? -ly: ly}; }
   function hitLocalRect(st, lp){ return Math.abs(lp.x) <= st.w/2 && Math.abs(lp.y) <= st.h/2; }
   function nearestHandle(st, lp){
     const hs = 18;
-    const corners = [
-      {x:-st.w/2,y:-st.h/2, id:'tl'},
-      {x: st.w/2,y:-st.h/2, id:'tr'},
-      {x: st.w/2,y: st.h/2, id:'br'},
-      {x:-st.w/2,y: st.h/2, id:'bl'}
-    ];
-    for(const c of corners){
-      if(Math.abs(lp.x - c.x) <= hs && Math.abs(lp.y - c.y) <= hs) return {type:'scale', corner:c.id};
-    }
-    // rotate handle: above top edge
-    const rx = 0, ry = -st.h/2 - 28, rr = 14;
-    if(Math.hypot(lp.x - rx, lp.y - ry) <= rr) return {type:'rotate'};
-    if(hitLocalRect(st, lp)) return {type:'move'};
-    return null;
+    const corners=[{x:-st.w/2,y:-st.h/2,id:'tl'},{x:st.w/2,y:-st.h/2,id:'tr'},{x:st.w/2,y:st.h/2,id:'br'},{x:-st.w/2,y:st.h/2,id:'bl'}];
+    for(const c of corners){ if(Math.abs(lp.x-c.x)<=hs && Math.abs(lp.y-c.y)<=hs) return {type:'scale',corner:c.id}; }
+    const rx=0, ry=-st.h/2-28, rr=14; if(Math.hypot(lp.x-rx, lp.y-ry)<=rr) return {type:'rotate'};
+    if(hitLocalRect(st,lp)) return {type:'move'}; return null;
   }
 
   /* ---------- Pointer interaction ---------- */
-  canvas.addEventListener('mousedown', startPointer);
-  canvas.addEventListener('touchstart', e=> startPointer(e.touches[0]));
-  function startPointer(e){
+  let drag = null; // {type, ...}
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('touchstart', e=> onDown(e.touches[0]));
+  function onDown(e){
     if(!baseImg) return;
     const p = toCanvasPoint(e.clientX, e.clientY);
     selected = -1; deleteBtn.disabled=true;
-
-    // topmost hit
     for(let i=stickers.length-1;i>=0;i--){
-      const st = stickers[i];
-      const lp = worldToLocal(st, p);
-      const hit = nearestHandle(st, lp);
-      if(hit){
-        selected = i;
-        // bring to front
-        const s=stickers.splice(selected,1)[0]; stickers.push(s); selected=stickers.length-1;
-        if(hit.type==='move') drag = {type:'move', dx:p.x - s.x, dy:p.y - s.y};
-        if(hit.type==='rotate'){
-          drag = {type:'rotate', startAngle:s.angle, base: Math.atan2(p.y - s.y, p.x - s.x)};
-        }
-        if(hit.type==='scale'){
-          drag = {type:'scale', corner:hit.corner, startW:s.w, startH:s.h};
-        }
-        deleteBtn.disabled=false;
-        break;
+      const st=stickers[i], lp=worldToLocal(st,p), h=nearestHandle(st,lp);
+      if(h){
+        const s=stickers.splice(i,1)[0]; stickers.push(s); selected=stickers.length-1;
+        if(h.type==='move')   drag={type:'move',dx:p.x-s.x,dy:p.y-s.y};
+        if(h.type==='rotate') drag={type:'rotate',start:s.angle,base:Math.atan2(p.y-s.y,p.x-s.x)};
+        if(h.type==='scale')  drag={type:'scale',corner:h.corner,startW:s.w,startH:s.h};
+        deleteBtn.disabled=false; break;
       }
     }
     draw();
-    document.addEventListener('mousemove', movePointer);
-    document.addEventListener('mouseup', endPointer);
-    document.addEventListener('touchmove', touchMove, {passive:false});
-    document.addEventListener('touchend', endPointer);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('touchmove', onTouchMove, {passive:false});
+    document.addEventListener('touchend', onUp);
   }
-  function touchMove(e){ if(drag){ e.preventDefault(); movePointer(e.touches[0]); } }
-  function movePointer(e){
+  function onTouchMove(e){ if(drag){ e.preventDefault(); onMove(e.touches[0]); } }
+  function onMove(e){
     if(selected<0 || !drag) return;
-    const st = stickers[selected];
-    const p = toCanvasPoint(e.clientX, e.clientY);
-
-    if(drag.type==='move'){
-      st.x = p.x - drag.dx; st.y = p.y - drag.dy;
-    } else if(drag.type==='rotate'){
-      const ang = Math.atan2(p.y - st.y, p.x - st.x);
-      st.angle = drag.startAngle + (ang - drag.base);
-    } else if(drag.type==='scale'){
-      // keep center; compute new size from local pointer
-      const lp = worldToLocal(st, p);
-      const ax = Math.abs(lp.x), ay = Math.abs(lp.y);
-      // choose dominant axis but preserve aspect
-      let newW = Math.max(MIN_SIZE, 2 * ax);
-      let newH = newW / st.aspect;
-      if(ay > (ax / st.aspect)){ // height dominates
-        newH = Math.max(MIN_SIZE / st.aspect, 2 * ay);
-        newW = newH * st.aspect;
-      }
-      st.w = Math.min(SIZE, newW);
-      st.h = Math.min(SIZE, newH);
+    const st=stickers[selected], p=toCanvasPoint(e.clientX,e.clientY);
+    if(drag.type==='move'){ st.x=p.x-drag.dx; st.y=p.y-drag.dy; }
+    else if(drag.type==='rotate'){ const a=Math.atan2(p.y-st.y,p.x-st.x); st.angle=drag.start+(a-drag.base); }
+    else if(drag.type==='scale'){
+      const lp=worldToLocal(st,p); const ax=Math.abs(lp.x), ay=Math.abs(lp.y);
+      let newW=Math.max(MIN_SIZE, 2*ax), newH=newW/st.aspect;
+      if(ay > ax/st.aspect){ newH=Math.max(MIN_SIZE/st.aspect, 2*ay); newW=newH*st.aspect; }
+      st.w=Math.min(SIZE,newW); st.h=Math.min(SIZE,newH);
     }
     draw();
   }
-  function endPointer(){
-    drag=null;
-    document.removeEventListener('mousemove', movePointer);
-    document.removeEventListener('mouseup', endPointer);
-    document.removeEventListener('touchmove', touchMove);
-    document.removeEventListener('touchend', endPointer);
-  }
+  function onUp(){ drag=null; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onTouchMove); document.removeEventListener('touchend', onUp); }
 
-  /* ---------- Buttons & shortcuts ---------- */
-  function rotateSel(delta){ if(selected<0) return; stickers[selected].angle += delta; draw(); }
-  function flipSel(axis){ if(selected<0) return; if(axis==='x') stickers[selected].flipX = !stickers[selected].flipX; else stickers[selected].flipY = !stickers[selected].flipY; draw(); }
-  function resetSel(){ if(selected<0) return; const st=stickers[selected]; st.angle=0; st.flipX=st.flipY=false; draw(); }
-
-  rotMinus.addEventListener('click', ()=> rotateSel(-Math.PI/12)); // -15°
-  rotPlus .addEventListener('click', ()=> rotateSel(+Math.PI/12)); // +15°
-  flipHBtn.addEventListener('click', ()=> flipSel('x'));
-  flipVBtn.addEventListener('click', ()=> flipSel('y'));
-  resetTx .addEventListener('click', resetSel);
-
+  /* ---------- Shortcuts ---------- */
   window.addEventListener('keydown', e=>{
     if(e.key==='Delete' && selected>-1){ stickers.splice(selected,1); selected=-1; draw(); return; }
-    if(e.key.toLowerCase()==='h'){ flipSel('x'); }
-    if(e.key.toLowerCase()==='v'){ flipSel('y'); }
-    if(e.key.toLowerCase()==='r'){ rotateSel(e.shiftKey ? +Math.PI/12 : -Math.PI/12); }
+    if(selected>-1){
+      const st=stickers[selected];
+      if(e.key.toLowerCase()==='h'){ st.flipX=!st.flipX; draw(); }
+      if(e.key.toLowerCase()==='v'){ st.flipY=!st.flipY; draw(); }
+      if(e.key.toLowerCase()==='r'){ st.angle += (e.shiftKey? +Math.PI/12 : -Math.PI/12); draw(); }
+    }
   });
 
-  deleteBtn.addEventListener('click', ()=>{
-    if(selected<0) return; stickers.splice(selected,1); selected=-1;
-    deleteBtn.disabled = stickers.length===0; clearBtn.disabled = stickers.length===0; draw();
-  });
-  clearBtn.addEventListener('click', ()=>{ stickers.length=0; selected=-1; deleteBtn.disabled=true; clearBtn.disabled=true; draw(); });
+  deleteBtn.addEventListener('click', ()=>{ if(selected<0) return; stickers.splice(selected,1); selected=-1; draw(); });
+  clearBtn.addEventListener('click', ()=>{ stickers.length=0; selected=-1; draw(); });
 
   /* ---------- Draw ---------- */
   function draw(){
     ctx.clearRect(0,0,SIZE,SIZE);
     ctx.fillStyle='#fff'; ctx.fillRect(0,0,SIZE,SIZE);
 
-    // base image: CONTAIN & CENTER (no crop)
+    // CONTAIN + CENTER base image (no crop)
     if(baseImg){
       const iw=baseImg.naturalWidth||baseImg.width, ih=baseImg.naturalHeight||baseImg.height;
       if(iw>0 && ih>0){
-        const scale = Math.min(SIZE/iw, SIZE/ih); // contain
-        const dw = Math.round(iw*scale), dh = Math.round(ih*scale);
-        const dx = Math.round((SIZE - dw)/2), dy = Math.round((SIZE - dh)/2);
+        const scale=Math.min(SIZE/iw, SIZE/ih);
+        const dw=Math.round(iw*scale), dh=Math.round(ih*scale);
+        const dx=Math.round((SIZE-dw)/2), dy=Math.round((SIZE-dh)/2);
         try{ ctx.drawImage(baseImg, 0,0, iw,ih, dx,dy, dw,dh); }
         catch{ ctx.drawImage(baseImg, dx,dy, dw,dh); }
       }
     }
 
     // stickers
-    stickers.forEach((st, idx)=>{
+    stickers.forEach((st)=>{
       ctx.save();
       ctx.translate(st.x, st.y);
       ctx.rotate(st.angle);
@@ -349,27 +293,16 @@
       ctx.restore();
     });
 
-    // selection overlay (rotated rect + handles)
+    // selection overlay
     if(selected>-1){
-      const st = stickers[selected];
-      ctx.save();
-      ctx.translate(st.x, st.y);
-      ctx.rotate(st.angle);
-      ctx.scale(st.flipX? -1:1, st.flipY? -1:1);
-
-      ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
-      ctx.strokeRect(-st.w/2, -st.h/2, st.w, st.h);
-      ctx.setLineDash([]);
-
-      ctx.fillStyle='#111';
-      const hs=18, rH=14;
-      // corners
-      ctx.fillRect(-st.w/2-hs/2, -st.h/2-hs/2, hs, hs);
-      ctx.fillRect( st.w/2-hs/2, -st.h/2-hs/2, hs, hs);
-      ctx.fillRect( st.w/2-hs/2,  st.h/2-hs/2, hs, hs);
-      ctx.fillRect(-st.w/2-hs/2,  st.h/2-hs/2, hs, hs);
-      // rotate handle (circle)
-      ctx.beginPath(); ctx.arc(0, -st.h/2-28, rH, 0, Math.PI*2); ctx.fill();
+      const st=stickers[selected]; ctx.save();
+      ctx.translate(st.x, st.y); ctx.rotate(st.angle); ctx.scale(st.flipX? -1:1, st.flipY? -1:1);
+      ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.strokeRect(-st.w/2,-st.h/2,st.w,st.h); ctx.setLineDash([]);
+      ctx.fillStyle='#111'; const hs=18; // corners
+      ctx.fillRect(-st.w/2-hs/2,-st.h/2-hs/2,hs,hs); ctx.fillRect(st.w/2-hs/2,-st.h/2-hs/2,hs,hs);
+      ctx.fillRect(st.w/2-hs/2, st.h/2-hs/2,hs,hs); ctx.fillRect(-st.w/2-hs/2, st.h/2-hs/2,hs,hs);
+      // rotate handle
+      ctx.beginPath(); ctx.arc(0, -st.h/2-28, 14, 0, Math.PI*2); ctx.fill();
       ctx.restore();
     }
   }
@@ -379,14 +312,14 @@
     if(!baseImg){ alert('Upload a picture first.'); return; }
     try{
       const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a'); a.href = url; a.download = 'anoma-shrimp-pfp.png';
+      const a=document.createElement('a'); a.href=url; a.download='anoma-shrimp-pfp.png';
       document.body.appendChild(a); a.click(); a.remove();
     }catch{
-      alert('Export blocked due to cross-origin stickers. Editor still works; rehost stickers with CORS or load them as local files to export.');
+      alert('Export blocked due to cross-origin stickers. Rehost stickers with CORS or load as local files to export.');
     }
   });
 
-  // initial size
+  // first layout
   fitCanvasCSS();
   </script>
 </body>
